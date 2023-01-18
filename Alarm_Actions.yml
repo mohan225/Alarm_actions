@@ -1,0 +1,68 @@
+---
+- name: Update vCenter Credentials
+  hosts: localhost
+  vars:
+    vcenter_hostname: vcenter.example.com
+    vcenter_username: admin
+    vcenter_password: old_password
+    new_username: new_admin
+    new_password: new_password
+  tasks:
+    - name: Update vCenter Credentials
+      vcenter_credentials:
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        new_username: "{{ new_username }}"
+        new_password: "{{ new_password }}"
+
+
+Here is an example of how you might develop a complete end-to-end method using a YAML script, Ansible, and Ansible vault to automate updating vCenter credentials and scheduling a cron job for regular updates:
+
+Create a YAML file called update_credentials.yml that defines the tasks needed to update the vCenter credentials.
+
+
+---
+- name: Update vCenter Credentials
+  hosts: localhost
+  vars_files:
+    - vars/vcenter_credentials.yml
+  tasks:
+    - name: Update vCenter Credentials
+      vcenter_credentials:
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        new_username: "{{ new_username }}"
+        new_password: "{{ new_password }}"
+        
+        
+Create a YAML file called vars/vcenter_credentials.yml that contains the vCenter credentials and new credentials as variables. This file should be encrypted using Ansible Vault.
+
+vcenter_hostname: vcenter.example.com
+vcenter_username: admin
+vcenter_password: old_password
+new_username: new_admin
+new_password: new_password
+
+Run the playbook with the following command, providing the vault password when prompted:
+
+ansible-playbook update_credentials.yml --ask-vault-pass
+
+This will update the vCenter credentials with the new username and password provided in the variables new_username and new_password.
+
+Create a cron job to run the playbook regularly, for example, every month. You can use the following command to schedule a cron job:
+
+crontab -e
+
+Then add this line to schedule the playbook to run every month:
+
+0 0 1 * * ansible-playbook /path/to/update_credentials.yml --ask-vault-pass
+
+
+This way the credentials will be automatically updated every month and the vCenter credentials are secured with Ansible vault.
+It's important to mention that the vcenter_credentials module should be installed before using it, also the script should be adapted to the specific vCenter version in use.
+
+Additionally, it's important to review the cron
+
+
