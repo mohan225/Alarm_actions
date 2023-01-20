@@ -1,0 +1,581 @@
+step by step method to automate enabling/disabling of alarm actions in vrops when host is disconnected, maintenance mode with YML
+
+Create a new workflow in vRealize Orchestrator (vRO) that will handle the automation of enabling/disabling alarm actions.
+Use the vRO plugin for vRealize Operations (vROps) to establish a connection to the vROps instance.
+Use vROps API calls to retrieve the current status of the host (e.g. disconnected or in maintenance mode).
+Use vROps API calls to enable or disable alarm actions based on the host status.
+Use YAML (YML) to define the workflow in vRO, including the necessary inputs, outputs, and steps.
+Test the workflow to ensure that it is functioning correctly.
+Schedule the workflow to run at regular intervals or trigger it to run based on a specific event.
+
+
+playbook to  automate enabling/disabling of alarm actions in vrops when host is disconnected, maintenance mode and not responding
+
+name: Automate Alarm Actions in vROps
+hosts: localhost
+gather_facts: no
+vars:
+vrops_host: "vrops.example.com"
+vrops_username: "admin"
+vrops_password: "password"
+alarm_name: "Host Disconnected Alarm"
+alarm_action: "disable"
+tasks:
+name: Connect to vROps
+vrops_rest:
+host: "{{ vrops_host }}"
+username: "{{ vrops_username }}"
+password: "{{ vrops_password }}"
+validate_certs: no
+action: "get_session_id"
+register: vrops_session
+
+name: Check Host Status
+vrops_rest:
+host: "{{ vrops_host }}"
+username: "{{ vrops_username }}"
+password: "{{ vrops_password }}"
+session_id: "{{ vrops_session.session_id }}"
+validate_certs: no
+resource_kind: "Host"
+resource_name: "{{ ansible_hostname }}"
+action: "get_resource_status"
+register: host_status
+
+name: Enable/Disable Alarm Actions
+vrops_rest:
+host: "{{ vrops_host }}"
+username: "{{ vrops_username }}"
+password: "{{ vrops_password }}"
+session_id: "{{ vrops_session.session_id }}"
+validate_certs: no
+alarm_name: "{{ alarm_name }}"
+alarm_action: "{{ alarm_action }}"
+resource_kind: "Host"
+resource_name: "{{ ansible_hostname }}"
+resource_status: "{{ host_status.resource_status }}"
+action: "manage_alarm_actions"
+when: host_status.resource_status == "disconnected" or host_status.resource_status == "maintenance" or host_status.resource_status == "not responding"
+register: alarm_result
+
+name: Print Alarm Result
+debug:
+var: alarm_result
+
+In this playbook, we first connect to vROps using vROps REST API and retrieve session id, 
+then check the status of the host using vROps REST API. Based on the status of the host, we use vROps REST API to enable or disable the alarm actions.
+
+You should replace the vrops_host, vrops_username, vrops_password and alarm_name with your own values. 
+You can also add additional conditions for the host status in the when statement in the "Enable/Disable Alarm Actions" task if you wish to include more states for the host.
+
+
+ - playbook to  automate enabling/disabling of alarm actions in vrops when host is disconnected, maintenance mode and not responding
+
+ Here is an example playbook for automating the enabling/disabling of alarm actions in vROps when a host is disconnected, in maintenance mode, or not responding:
+
+
+---
+- name: Automate Alarm Actions in vROps
+  hosts: localhost
+  gather_facts: no
+  vars:
+    vrops_host: "vrops.example.com"
+    vrops_username: "admin"
+    vrops_password: "password"
+    alarm_name: "Host Disconnected Alarm"
+    alarm_action: "disable"
+  tasks:
+  - name: Connect to vROps
+    vrops_rest:
+      host: "{{ vrops_host }}"
+      username: "{{ vrops_username }}"
+      password: "{{ vrops_password }}"
+      validate_certs: no
+      action: "get_session_id"
+    register: vrops_session
+
+  - name: Check Host Status
+    vrops_rest:
+      host: "{{ vrops_host }}"
+      username: "{{ vrops_username }}"
+      password: "{{ vrops_password }}"
+      session_id: "{{ vrops_session.session_id }}"
+      validate_certs: no
+      resource_kind: "Host"
+      resource_name: "{{ ansible_hostname }}"
+      action: "get_resource_status"
+    register: host_status
+
+  - name: Enable/Disable Alarm Actions
+    vrops_rest:
+      host: "{{ vrops_host }}"
+      username: "{{ vrops_username }}"
+      password: "{{ vrops_password }}"
+      session_id: "{{ vrops_session.session_id }}"
+      validate_certs: no
+      alarm_name: "{{ alarm_name }}"
+      alarm_action: "{{ alarm_action }}"
+      resource_kind: "Host"
+      resource_name: "{{ ansible_hostname }}"
+      resource_status: "{{ host_status.resource_status }}"
+      action: "manage_alarm_actions"
+    when: host_status.resource_status in ["disconnected", "maintenance", "not responding"]
+    register: alarm_result
+
+  - name: Print Alarm Result
+    debug:
+      var: alarm_result
+
+
+In this playbook, we first connect to vROps using vROps REST API and retrieve the session id, 
+then check the status of the host using vROps REST API. Based on the status of the host, we use vROps REST API to enable or disable the alarm actions.
+
+You should replace the vrops_host, vrops_username, vrops_password, and alarm_name with your own values. 
+You can also add additional conditions for the host status in the when statement in the "Enable/Disable Alarm Actions" task if you wish to include more states for the host.
+
+
+- playbook to  automate enabling/disabling of alarm actions in vrops when host is disconnected, maintenance mode and not responding
+
+Here is an example of a playbook in Ansible that can be used to automate enabling/disabling of alarm actions in vRealize Operations (vROps) based on the status of a host:
+
+- name: Automate Alarm Actions in vROps
+  hosts: localhost
+  connection: local
+  gather_facts: no
+  
+  vars:
+    vrops_host: "vrops.example.com"
+    vrops_user: "admin"
+    vrops_pass: "password"
+    vrops_verify_ssl: False
+    host_name: "myhost.example.com"
+  
+  tasks:
+  - name: Retrieve Host Status
+    uri:
+      url: "https://{{ vrops_host }}/suite-api/api/resources"
+      method: GET
+      user: "{{ vrops_user }}"
+      password: "{{ vrops_pass }}"
+      validate_certs: "{{ vrops_verify_ssl }}"
+      headers:
+        Accept: "application/json"
+      return_content: yes
+    register: host_status
+    
+  - name: Parse Host Status
+    set_fact:
+      host_status_parsed: "{{ host_status.json.resourceList[0].resourceKey.name }}"
+    
+  - name: Enable Alarm Actions
+    uri:
+      url: "https://{{ vrops_host }}/suite-api/api/alarm/actions"
+      method: POST
+      user: "{{ vrops_user }}"
+      password: "{{ vrops_pass }}"
+      validate_certs: "{{ vrops_verify_ssl }}"
+      headers:
+        Accept: "application/json"
+        Content-Type: "application/json"
+      body: '{"resourceKey":{"name":"{{ host_name }}"}}'
+      body_format: json
+      when: host_status_parsed == "Connected"
+      
+  - name: Disable Alarm Actions
+    uri:
+      url: "https://{{ vrops_host }}/suite-api/api/alarm/actions"
+      method: DELETE
+      user: "{{ vrops_user }}"
+      password: "{{ vrops_pass }}"
+      validate_certs: "{{ vrops_verify_ssl }}"
+      headers:
+        Accept: "application/json"
+        Content-Type: "application/json"
+      body: '{"resourceKey":{"name":"{{ host_name }}"}}'
+      body_format: json
+      when: host_status_parsed != "Connected"
+
+This playbook uses the uri module to make API calls to vROps and retrieve the status of a host. It also uses when to check the status and enable or disable the alarm actions accordingly.
+
+You would need to replace the vROps host name, username, and password with your vROps environment settings. Also, the host_name variable should be the name of the host for which you want to enable or disable the alarm actions.
+You can run the playbook by running the command ansible-playbook -i "localhost," -c local playbook.yml
+
+
+- playbook to  automate enabling/disabling of alarm actions in vrops when host is disconnected, maintenance mode and not responding
+Here is an example of a playbook that can be used to automate the enabling/disabling of alarm actions in vROps based on the status of a host:
+
+- name: Enable/disable alarm actions in vROps
+  hosts: localhost
+  gather_facts: false
+  vars:
+    vrops_url: "https://vrops.example.com"
+    vrops_username: "admin"
+    vrops_password: "password"
+    hostname: "host1.example.com"
+  tasks:
+    - name: Check host status
+      uri:
+        url: "{{ vrops_url }}/suite-api/api/adapterkinds/VMWARE/resources/{{ hostname }}"
+        method: GET
+        user: "{{ vrops_username }}"
+        password: "{{ vrops_password }}"
+        validate_certs: false
+        return_content: yes
+        headers:
+          Accept: application/json
+      register: host_status
+
+    - name: Enable alarm actions
+      uri:
+        url: "{{ vrops_url }}/suite-api/api/adapterkinds/VMWARE/resources/{{ hostname }}/alarm/alarmActions/{{ hostname }}/enable"
+        method: PUT
+        user: "{{ vrops_username }}"
+        password: "{{ vrops_password }}"
+        validate_certs: false
+        return_content: yes
+        headers:
+          Accept: application/json
+      when: host_status.json.adapterKindKey == "VMWARE" and host_status.json.resourceKey.name == hostname and (host_status.json.connectionState == "DISCONNECTED" or host_status.json.maintenanceMode == "true" or host_status.json.responding == "false")
+
+    - name: Disable alarm actions
+      uri:
+        url: "{{ vrops_url }}/suite-api/api/adapterkinds/VMWARE/resources/{{ hostname }}/alarm/alarmActions/{{ hostname }}/disable"
+        method: PUT
+        user: "{{ vrops_username }}"
+        password: "{{ vrops_password }}"
+        validate_certs: false
+        return_content: yes
+        headers:
+          Accept: application/json
+      when: host_status.json.adapterKindKey == "VMWARE" and host_status.json.resourceKey.name == hostname and (host_status.json.connectionState == "CONNECTED" and host_status.json.maintenanceMode == "false" and host_status.json.responding == "true")
+
+This playbook uses the uri module to make API calls to vROps, which allows it to check the status of the host and enable or disable alarm actions based on that status. 
+The when clause in each task specifies the conditions under which the task should be executed.
+
+
+
+=playbook to  automate enabling/disabling of alarm actions in vrops when host is disconnected, maintenance mode and not responding
+In this example, the alarm actions will be enabled when the host is disconnected or in maintenance mode or not responding and disabled when the host is connected and 
+not in maintenance mode and responding.
+
+You will need to modify the vars section with your vROps instance information and the hostname you want to check.
+
+You can
+
+
+- end to end to end to end update vcenter credentials with ansible
+
+Here is an example of an Ansible playbook that can be used to update vCenter credentials end-to-end:
+
+---
+- name: Update vCenter Credentials
+  hosts: localhost
+  gather_facts: false
+  vars:
+    vcenter_url: "https://vcenter.example.com"
+    vcenter_username: "old_username"
+    vcenter_password: "old_password"
+    new_vcenter_username: "new_username"
+    new_vcenter_password: "new_password"
+  tasks:
+    - name: Log in to vCenter
+      uri:
+        url: "{{ vcenter_url }}/rest/com/vmware/cis/session"
+        method: POST
+        user: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        validate_certs: false
+        body: '{"vmware-api-session-parameters": {}}'
+        headers:
+          Content-Type: application/json
+          Accept: application/json
+      register: login_response
+
+    - name: Update vCenter credentials
+      uri:
+        url: "{{ vcenter_url }}/rest/com/vmware/cis/user"
+        method: PUT
+        user: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        validate_certs: false
+        body: '{ "password": "{{ new_vcenter_password }}", "userName": "{{ new_vcenter_username }}" }'
+        headers:
+          Content-Type: application/json
+          Accept: application/json
+          vmware-api-session-id: "{{ login_response.json.value }}"
+      register: update_response
+
+    - name: Log out of vCenter
+      uri:
+        url: "{{ vcenter_url }}/rest/com/vmware/cis/session"
+        method: DELETE
+        user: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        validate_certs: false
+        headers:
+          vmware-api-session-id: "{{ login_response.json.value }}"
+
+This playbook uses the uri module to make REST API calls to vCenter, which allows it to log in, update the credentials, and log out.
+
+The first task logs in to vCenter using the old username and password, and saves the session ID returned by vCenter in a variable.
+
+The second task uses the session ID to update the vCenter credentials with the new username and password.
+
+The last task logs out of vCenter using the session ID.
+
+You will need to modify the vars section with your vCenter information and the new credentials you want to use.
+
+It's important to mention that this is just an example and you should test this in a lab environment before implementing it in production and also consider the security 
+implications of storing plaintext passwords in playbooks.
+
+
+- end to end update vcenter credentials with ansible
+
+Here is an example of an Ansible playbook that can be used to update vCenter credentials end-to-end using the vmware_vcenter_credentials module:
+
+---
+- name: Update vCenter Credentials
+  hosts: localhost
+  gather_facts: false
+  vars:
+    vcenter_hostname: "vcenter.example.com"
+    vcenter_username: "old_username"
+    vcenter_password: "old_password"
+    new_vcenter_username: "new_username"
+    new_vcenter_password: "new_password"
+  tasks:
+    - name: Update vCenter credentials
+      vmware_vcenter_credentials:
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        new_username: "{{ new_vcenter_username }}"
+        new_password: "{{ new_vcenter_password }}"
+      delegate_to: localhost
+
+This playbook uses the vmware_vcenter_credentials module to update the vCenter credentials.
+It takes in the vCenter hostname, old username and password, and the new username and password as variables.
+It uses these variables to update the vCenter credentials via the vmware_vcenter_credentials module.
+
+You will need to modify the vars section with your vCenter information and the new credentials you want to use.
+
+It's important to mention that this is just an example and you should test this in a lab environment before implementing it in production and also consider the 
+security implications of storing plaintext passwords in playbooks.
+
+
+- end to end method to update vcenter credentials with yml
+
+Here is an example of an end-to-end method to update vCenter credentials using YAML (YML):
+
+Create a YAML file that contains the necessary variables for the vCenter hostname, old username and password, and new username and password.
+
+Use a tool such as Ansible to read in the YAML file and assign the variables to the corresponding values.
+
+Use the Ansible vmware_vcenter_credentials module to update the vCenter credentials, passing in the necessary variables as arguments.
+
+Test the playbook to ensure that it is updating the vCenter credentials correctly.
+
+Here is an example of the YAML file:
+
+vcenter_hostname: "vcenter.example.com"
+vcenter_username: "old_username"
+vcenter_password: "old_password"
+new_vcenter_username: "new_username"
+new_vcenter_password: "new_password"
+
+
+And an example of Ansible playbook that reads the YAML file and update vCenter credentials:
+
+---
+- name: Update vCenter Credentials
+  hosts: localhost
+  gather_facts: false
+  vars_files:
+    - vars.yml
+  tasks:
+    - name: Update vCenter credentials
+      vmware_vcenter_credentials:
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        new_username: "{{ new_vcenter_username }}"
+        new_password: "{{ new_vcenter_password }}"
+      delegate_to: localhost
+
+This playbook uses the vars_files to read the variables from the vars.yml file and uses them in the vmware_vcenter_credentials module to update vCenter credentials 
+with the new information.
+
+It's important to mention that this is just an example and you should test this in a lab environment before implementing it in production and also consider the 
+security implications of storing plaintext passwords in YAML files.
+
+
+- end to end method to update vcenter credentials with ansible
+
+Here is an example of an end-to-end method to update vCenter credentials using Ansible:
+
+Create an Ansible playbook that defines the necessary variables for the vCenter hostname, old username and password, and new username and password.
+
+Use the Ansible vmware_vcenter_credentials module to update the vCenter credentials, passing in the necessary variables as arguments.
+
+Test the playbook to ensure that it is updating the vCenter credentials correctly.
+
+Run the playbook on the target system or schedule it to run at a specific time.
+
+Here is an example of an Ansible playbook that updates vCenter credentials:
+
+---
+- name: Update vCenter Credentials
+  hosts: localhost
+  gather_facts: false
+  vars:
+    vcenter_hostname: "vcenter.example.com"
+    vcenter_username: "old_username"
+    vcenter_password: "old_password"
+    new_vcenter_username: "new_username"
+    new_vcenter_password: "new_password"
+  tasks:
+    - name: Update vCenter credentials
+      vmware_vcenter_credentials:
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        new_username: "{{ new_vcenter_username }}"
+        new_password: "{{ new_vcenter_password }}"
+
+This playbook uses the vars section to define the variables for the vCenter hostname, old username and password, and new username and password. It then uses the vmware_vcenter_credentials module to update the vCenter credentials with the new information.
+
+You will need to modify the vars section with your vCenter information and the new credentials you want to use.
+
+It's important to mention that this is just an example and you should test this in a lab environment before implementing it in production and also consider the security implications of storing plaintext passwords in playbooks.
+
+To run this playbook you can use the ansible-playbook command and specify the playbook file:
+
+ansible-playbook -i inventory update_vcenter_credentials.yml
+
+
+Where the inventory file should contain the target system information.
+
+
+
+
+- playbook to  automate enabling/disabling of alarm actions in vrops when host is disconnected, maintenance mode and not responding
+
+Here is an example of an Ansible playbook that can be used to automate the enabling/disabling of alarm actions in vROps based on the status of a host, this time I'll use the vmware_vrops_alarm module for this task:
+
+---
+- name: Enable/disable alarm actions in vROps
+  hosts: localhost
+  gather_facts: false
+  vars:
+    vrops_hostname: "vrops.example.com"
+    vrops_username: "admin"
+    vrops_password: "password"
+    hostname: "host1.example.com"
+  tasks:
+    - name: Check host status
+      vmware_vrops_adapter_resource_facts:
+        hostname: "{{ vrops_hostname }}"
+        username: "{{ vrops_username }}"
+        password: "{{ vrops_password }}"
+        resource_name: "{{ hostname }}"
+        adapter_kind: "VMWARE"
+      register: host_status
+
+    - name: Enable alarm actions
+      vmware_vrops_alarm:
+        hostname: "{{ vrops_hostname }}"
+        username: "{{ vrops_username }}"
+        password: "{{ vrops_password }}"
+        resource_name: "{{ hostname }}"
+        adapter_kind: "VMWARE"
+        alarm_name: "{{ hostname }}"
+        state: enabled
+      when: host_status.resources[0].connectionState == "DISCONNECTED" or host_status.resources[0].maintenanceMode == "true" or host_status.resources[0].responding == "false"
+
+    - name: Disable alarm actions
+      vmware_vrops_alarm:
+        hostname: "{{ vrops_hostname }}"
+        username: "{{ vrops_username }}"
+        password: "{{ vrops_password }}"
+        resource_name: "{{ hostname }}"
+        adapter_kind: "VMWARE"
+        alarm_name: "{{ hostname }}"
+        state: disabled
+      when: host_status.resources[0].connectionState == "CONNECTED" and host_status.resources[0].maintenanceMode == "false" and host_status.resources[0].responding == "true"
+
+
+This playbook uses the vmware_vrops_adapter_resource_facts and vmware_vrops_alarm modules to check the status of the host and enable or disable alarm actions based on 
+that status. The when clause in each task specifies the conditions under which the task should be executed. 
+In this example, the alarm actions will be enabled when the host is disconnected or in maintenance mode or not responding and disabled when the host is connected and 
+not in maintenance mode and responding.
+
+You will need to modify the vars section with your vROps instance information and the hostname you want to check.
+
+It's important to mention that you should have the vmware_vrops_alarm and vmware_vrops_adapter_resource_facts modules installed, 
+you can install it via pip by running pip install ansible-modules-vmware_vrops
+
+
+- playbook to  automate enabling/disabling of alarm actions in vrops when host is disconnected, maintenance mode and not responding
+
+
+Here is an example of an Ansible playbook that can be used to automate the enabling/disabling of alarm actions in vROps based on the status of a host:
+
+---
+- name: Enable/disable alarm actions in vROps
+  hosts: localhost
+  gather_facts: false
+  vars:
+    vrops_url: "https://vrops.example.com"
+    vrops_username: "admin"
+    vrops_password: "password"
+    hostname: "host1.example.com"
+  tasks:
+    - name: Check host status
+      uri:
+        url: "{{ vrops_url }}/suite-api/api/adapterkinds/VMWARE/resources/{{ hostname }}"
+        method: GET
+        user: "{{ vrops_username }}"
+        password: "{{ vrops_password }}"
+        validate_certs: false
+        return_content: yes
+        headers:
+          Accept: application/json
+      register: host_status
+
+    - name: Enable alarm actions
+      uri:
+        url: "{{ vrops_url }}/suite-api/api/adapterkinds/VMWARE/resources/{{ hostname }}/alarm/alarmActions/{{ hostname }}/enable"
+        method: PUT
+        user: "{{ vrops_username }}"
+        password: "{{ vrops_password }}"
+        validate_certs: false
+        return_content: yes
+        headers:
+          Accept: application/json
+      when: host_status.json.adapterKindKey == "VMWARE" and host_status.json.resourceKey.name == hostname and (host_status.json.connectionState == "DISCONNECTED" or host_status.json.maintenanceMode == "true" or host_status.json.responding == "false")
+
+    - name: Disable alarm actions
+      uri:
+        url: "{{ vrops_url }}/suite-api/api/adapterkinds/VMWARE/resources/{{ hostname }}/alarm/alarmActions/{{ hostname }}/disable"
+        method: PUT
+        user: "{{ vrops_username }}"
+        password: "{{ vrops_password }}"
+        validate_certs: false
+        return_content: yes
+        headers:
+          Accept: application/json
+      when: host_status.json.adapterKindKey == "VMWARE" and host_status.json.resourceKey.name == hostname and (host_status.json.connectionState == "CONNECTED" and host_status.json.maintenanceMode == "false" and host_status.json.responding == "true")
+
+This playbook uses the uri module to make API calls to vROps, which allows it to check the status of the host and enable or disable alarm actions based on that status.
+
+The when clause in each task specifies the conditions under which the task should be executed. 
+
+In this example, the alarm actions will be enabled when the host is disconnected or in maintenance mode or not responding and disabled when the host is connected and 
+not in maintenance mode and responding.
+
+You will need to modify the vars section with your vROps instance information and the hostname you want to check.
+
+
+
+
+

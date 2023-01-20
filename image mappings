@@ -1,0 +1,71 @@
+how to prepare a method to automate enabling/disabling of alarm actions in vrops when host is not responding , disconnected, maintenance mode  with Ansible playbooks
+
+To prepare a method to automate the enabling/disabling of alarm actions in vRealize Operations (vROPS) when a host is not responding, disconnected, or in maintenance mode using Ansible playbooks, you can follow these steps:
+
+Create an Ansible playbook to check the status of the host and determine if it is not responding, disconnected, or in maintenance mode.
+
+Use the vRealize Operations REST API to retrieve the list of alarms for the host in question.
+
+Use the vRealize Operations REST API to update the alarm actions for the alarms that are associated with the host based on its status (e.g., enable or disable).
+
+Schedule the playbook to run on a regular basis (e.g., every hour) to ensure that the alarm actions are always up-to-date.
+
+You will need to have the Ansible and vROps credentials, API endpoint and API calls to gather the data and perform the actions required.
+
+It is also important to test your playbooks in a non-production environment before running them on production systems.
+
+
+
+create a playbook to update image mappings in vra when latest is pushed in by promote_template
+
+Here's an example of an Ansible playbook that can be used to update image mappings in vRealize Automation (vRA) when a new image is pushed by the promote_template function:
+
+
+- name: Update image mappings in vRA
+  hosts: localhost
+  vars:
+    vra_host: "vra.example.com"
+    vra_username: "admin"
+    vra_password: "password"
+    vra_tenant: "vsphere.local"
+    template_name: "mytemplate"
+    image_name: "myimage"
+  tasks:
+  - name: Get bearer token
+    uri:
+      url: "https://{{ vra_host }}/identity/api/tokens"
+      method: POST
+      body: '{ "username": "{{ vra_username }}", "password": "{{ vra_password }}", "tenant": "{{ vra_tenant }}" }'
+      headers:
+        Content-Type: "application/json"
+    register: bearer_token
+
+  - name: Get image ID
+    uri:
+      url: "https://{{ vra_host }}/catalog-service/api/consumer/resources?$filter=name+eq+'{{ image_name }}'"
+      headers:
+        Authorization: "Bearer {{ bearer_token.json.access_token }}"
+    register: image_id
+
+  - name: Get template ID
+    uri:
+      url: "https://{{ vra_host }}/catalog-service/api/consumer/resources?$filter=name+eq+'{{ template_name }}'"
+      headers:
+        Authorization: "Bearer {{ bearer_token.json.access_token }}"
+    register: template_id
+
+  - name: Update image mapping
+    uri:
+      url: "https://{{ vra_host }}/catalog-service/api/consumer/resources/{{ template_id.json.content[0].id }}/actions/updateMappedImage"
+      method: POST
+      body: '{ "imageId": "{{ image_id.json.content[0].id }}" }'
+      headers:
+        Content-Type: "application/json"
+        Authorization: "Bearer {{ bearer_token.json.access_token }}"
+
+
+This playbook assumes that you already have a vRA environment set up and that you have the appropriate credentials for accessing the vRA API. It uses the uri module to make RESTful API calls to vRA to retrieve the IDs of the image and template in question, and then uses those IDs to update the image mapping for the template.
+
+You will need to edit the vars section to match your vRA endpoint, credentials, and tenant details. Also, the template_name and image_name need to match the template and image that you want to update.
+
+It is important to test the playbook in a non-production environment before running it on production systems.

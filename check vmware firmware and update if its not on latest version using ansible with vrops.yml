@@ -1,0 +1,301 @@
+mohan.chirakala@gmail.com
+apply valid license if vmware host is running on Evaluation license with ansible
+To apply a valid license to a VMware host using Ansible, you can use the vmware_host_config_manager module. Here is an example of how you would use this module to apply a valid license to a VMware host:
+
+Copy code
+- name: Apply valid license to VMware host
+  vmware_host_config_manager:
+    hostname: "{{ vcenter_hostname }}"
+    username: "{{ vcenter_username }}"
+    password: "{{ vcenter_password }}"
+    license_key: "{{ valid_license_key }}"
+    state: licensed
+In this example, the vcenter_hostname, vcenter_username, and vcenter_password variables should be replaced with the appropriate values for your VMware vCenter server. The valid_license_key variable should be replaced with the actual license key that you want to apply.
+
+This task will apply the specified license key to the vCenter server and all the hosts that are currently in evaluation mode will be licensed.
+
+Please note that if you want to apply license to specific host(s) you need to filter the host(s) using host filter before running this task.
+
+
+
+
+mohan.chirakala@gmail.com
+apply valid license if vmware host is running on Evaluation license with ansible playbook
+To apply a valid license to a VMware host using Ansible playbook, you can use the vmware_host_config_manager module in a task. Here is an example of how you would use this module to apply a valid license to a VMware host in a playbook:
+
+Copy code
+- name: Apply valid license to VMware host
+  hosts: vcenter
+  vars:
+    vcenter_hostname: "vcenter.example.com"
+    vcenter_username: "admin"
+    vcenter_password: "password"
+    valid_license_key: "XXXXX-XXXXX-XXXXX-XXXXX-XXXXX"
+  tasks:
+    - name: Apply license to the hosts
+      vmware_host_config_manager:
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        license_key: "{{ valid_license_key }}"
+        state: licensed
+      delegate_to: localhost
+In this example, the vcenter_hostname, vcenter_username, and vcenter_password variables should be replaced with the appropriate values for your VMware vCenter server. The valid_license_key variable should be replaced with the actual license key that you want to apply. Also, the hosts field should specify the vCenter server where the license needs to be applied.
+
+This task will apply the specified license key to the vCenter server and all the hosts that are currently in evaluation mode will be licensed.
+
+You can also filter the host(s) using host filter before running this task.
+
+Copy code
+    - name: Apply license only to specific hosts
+      vmware_host_config_manager:
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        license_key: "{{ valid_license_key }}"
+        state: licensed
+        host_filter:
+         - name: host1.example.com
+         - name: host2.example.com
+      delegate_to: localhost
+This task will apply the license to only the specified hosts, host1.example.com and host2.example.com.
+
+
+
+
+mohan.chirakala@gmail.com
+check the vmware host which is running on Evaluation license and replace with valid license
+To check which VMware hosts are running on an Evaluation license and replace them with a valid license using Ansible, you can use the vmware_host_config_info module to gather information about the licenses, and the vmware_host_config_manager module to apply a valid license. Here is an example of how you would use these modules in a playbook:
+
+Copy code
+- name: Check and Replace VMware host licenses
+  hosts: vcenter
+  vars:
+    vcenter_hostname: "vcenter.example.com"
+    vcenter_username: "admin"
+    vcenter_password: "password"
+    valid_license_key: "XXXXX-XXXXX-XXXXX-XXXXX-XXXXX"
+  tasks:
+    - name: Gather information about the host licenses
+      vmware_host_config_info:
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+      delegate_to: localhost
+      register: host_licenses
+
+    - name: Apply valid license to hosts with Evaluation license
+      vmware_host_config_manager:
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        license_key: "{{ valid_license_key }}"
+        state: licensed
+      delegate_to: localhost
+      when: host_licenses.licenses[item.name].edition == "evaluation"
+      loop: "{{ host_licenses.licenses|dict2items }}"
+
+In this example, the vcenter_hostname, vcenter_username, and vcenter_password variables should be replaced with the appropriate values for your VMware vCenter server. The valid_license_key variable should be replaced with the actual license key that you want to apply. Also, the hosts field should specify the vCenter server where the license needs to be applied.
+
+The first task, vmware_host_config_info, retrieves information about the licenses of all the hosts connected to the vCenter server and register the output in variable host_licenses.
+
+The second task, vmware_host_config_manager, loops through the host_licenses variable and checks the edition of each host's license. If the license edition is "evaluation", it applies the valid license key to the host using the vmware_host_config_manager module.
+
+You can also filter the host(s) using host filter before running the tasks.
+
+Copy code
+- name: Check and Replace VMware host licenses
+  hosts: vcenter
+  vars:
+    vcenter_hostname: "vcenter.example.com"
+    vcenter_username: "admin"
+    vcenter_password: "password"
+    valid_license_key: "XXXXX-XXXXX-XXXXX-XXXXX-XXXXX"
+  tasks:
+    - name: Gather information about the host licenses
+      vmware_host_config_info:
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        host_filter:
+         - name: host1.example.com
+         - name: host
+
+
+
+
+
+
+
+mohan.chirakala@gmail.com
+check the vmware host which is running on Evaluation license and replace with valid license
+
+2 / 2
+
+To check which VMware hosts are running on an Evaluation license and replace them with a valid license, you can use the vmware_host_config_manager module in a task in Ansible. Here is an example of how you would use this module to check and replace the Evaluation license with a valid license in a playbook:
+
+Copy code
+- name: Check and Replace Evaluation license
+  hosts: vcenter
+  vars:
+    vcenter_hostname: "vcenter.example.com"
+    vcenter_username: "admin"
+    vcenter_password: "password"
+    valid_license_key: "XXXXX-XXXXX-XXXXX-XXXXX-XXXXX"
+  tasks:
+    - name: Get all hosts and their licenses
+      vmware_host_config_manager:
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        state: info
+      delegate_to: localhost
+      register: host_licenses
+
+    - name: Replace Evaluation license
+      vmware_host_config_manager:
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        license_key: "{{ valid_license_key }}"
+        state: licensed
+      delegate_to: localhost
+      when: host_licenses.hosts[item].license.edition == "evaluation"
+      loop: "{{ host_licenses.hosts | dict2items }}"
+In this example, the vcenter_hostname, vcenter_username, and vcenter_password variables should be replaced with the appropriate values for your VMware vCenter server. The valid_license_key variable should be replaced with the actual license key that you want to apply. Also, the hosts field should specify the vCenter server where the license needs to be applied.
+
+The first task will gather information about all the hosts and their licenses and register the output in a variable host_licenses.
+
+The second task will loop through the hosts and check if the host's license edition is 'evaluation' and if it is then it will replace it with the valid license key specified.
+
+You can also filter the host(s) using host filter before running the first task.
+
+Copy code
+    - name: Get licenses of specific hosts
+      vmware_host_config_manager:
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        state: info
+        host_filter:
+         - name: host1.example.com
+         - name: host2.example.com
+      delegate_to: localhost
+      register: host_licenses
+This task will gather information only about host1.example.com and host2.example.com.
+
+It's always a good practice to use when condition to check the current state of the host and make the change accordingly.
+
+
+
+
+
+
+
+
+
+
+
+
+check that firmware is at latest version or not for vmware with ansible
+To check the firmware version of a VMware host using Ansible, you can use the vmware_host_facts module. This module can be used to gather facts about a VMware host, including the version of its firmware. Here is an example of how to use this module in an Ansible playbook:
+
+Copy code
+- name: Gather facts about VMware host
+  vmware_host_facts:
+    hostname: "{{ vcenter_hostname }}"
+    username: "{{ vcenter_username }}"
+    password: "{{ vcenter_password }}"
+    validate_certs: no
+  register: host_facts
+
+- name: Print firmware version
+  debug:
+    msg: "Firmware version: {{ host_facts.hosts[0].hardware.biosinfo.biosVersion }}"
+In this example, the vmware_host_facts module is used to gather facts about a VMware host specified by the vcenter_hostname variable. The vcenter_username and vcenter_password variables are used to authenticate to the host. The gathered facts are then registered in a variable called host_facts, which can be used to access the firmware version (biosVersion) of the host.
+
+You can compare this version with the latest version of firmware available and decide to update if necessary.
+
+
+
+
+mohan.chirakala@gmail.com
+check vmware firmware and update if its not on latest version using ansible
+To check the firmware version of a VMware host and update it if it's not on the latest version using Ansible, you can use the vmware_host_firmware module in conjunction with the vmware_host_facts module. Here is an example of how to use these modules in an Ansible playbook:
+
+Copy code
+- name: Gather facts about VMware host
+  vmware_host_facts:
+    hostname: "{{ vcenter_hostname }}"
+    username: "{{ vcenter_username }}"
+    password: "{{ vcenter_password }}"
+    validate_certs: no
+  register: host_facts
+
+- name: Check firmware version
+  set_fact:
+    firmware_version: "{{ host_facts.hosts[0].hardware.biosinfo.biosVersion }}"
+
+- name: Compare firmware version
+  set_fact:
+    update_firmware: false
+  when: firmware_version != "latest_firmware_version"
+
+- name: Update firmware
+  vmware_host_firmware:
+    hostname: "{{ vcenter_hostname }}"
+    username: "{{ vcenter_username }}"
+    password: "{{ vcenter_password }}"
+    validate_certs: no
+    hostname: "{{ host_name }}"
+    firmware: "latest_firmware_version"
+  when: update_firmware
+In this example, the vmware_host_facts module is used to gather facts about a VMware host specified by the vcenter_hostname variable. The vcenter_username and vcenter_password variables are used to authenticate to the host. The gathered facts are then registered in a variable called host_facts, which can be used to access the firmware version (biosVersion) of the host.
+
+The firmware version is then saved in a variable called firmware_version and compared to the latest firmware version available, which is specified in a variable called latest_firmware_version. If the firmware version is not the latest version, the update_firmware variable is set to true.
+
+Finally, the vmware_host_firmware module is used to update the firmware of the host to the latest version, if the update_firmware variable is true.
+
+It's important to note that this is an example and you will need to adjust it to match your specific environment, also make sure you have the correct version of the firmware for the specific host.
+
+
+
+
+mohan.chirakala@gmail.com
+check vmware firmware and update if its not on latest version using ansible with vrops 
+To check the firmware version of a VMware host and update it if it's not on the latest version using Ansible with vROps, you can use the vRealize Operations (vROps) REST API in conjunction with the Ansible vmware_host_firmware module. Here is an example of how to use these modules in an Ansible playbook:
+
+Copy code
+- name: Gather facts about VMware host
+  uri:
+    url: "https://vrops_hostname/suite-api/api/adapterkinds/VMWARE/resources"
+    headers:
+      accept: "application/json"
+      Authorization: "Basic {{ vrops_auth_token }}"
+  register: host_facts
+
+- name: Check firmware version
+  set_fact:
+    firmware_version: "{{ host_facts.json.resourceList[0].attributes.bios.biosVersion }}"
+
+- name: Compare firmware version
+  set_fact:
+    update_firmware: false
+  when: firmware_version != "latest_firmware_version"
+
+- name: Update firmware
+  vmware_host_firmware:
+    hostname: "{{ vcenter_hostname }}"
+    username: "{{ vcenter_username }}"
+    password: "{{ vcenter_password }}"
+    validate_certs: no
+    hostname: "{{ host_facts.json.resourceList[0].name }}"
+    firmware: "latest_firmware_version"
+  when: update_firmware
+In this example, the vROps REST API is used to gather facts about a VMware host by making a GET request to the "/suite-api/api/adapterkinds/VMWARE/resources" endpoint. The vrops_hostname and vrops_auth_token variables are used to authenticate to vROps. The gathered facts are then registered in a variable called host_facts, which can be used to access the firmware version of the host.
+
+The firmware version is then saved in a variable called firmware_version and compared to the latest firmware version available, which is specified in a variable called latest_firmware_version. If the firmware version is not the latest version, the update_firmware variable is set to true.
+
+Finally, the vmware_host_firmware module is used to update the firmware of the host to the latest version, if the update_firmware variable is true.
+
+It's important to note that this is an example and you will need to adjust it to match your specific environment and also make sure you have the correct version of the firmware for the specific host. Also, you will need to have vROps configured and accessible to use its REST API.

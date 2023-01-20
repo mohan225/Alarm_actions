@@ -1,0 +1,1226 @@
+mohan.chirakala@gmail.com
+develop a method to check the host is not running on Evaluation license and disable the server if it is on Evaluation license with ansible
+Here is a possible method to check if a host is running on an Evaluation license and disable the server if it is, using Ansible:
+
+Create a new Ansible playbook to run the check and disable the server.
+
+Use the shell module to run a command that checks the license status on the host. For example, you can use the grep command to check for the word "Evaluation" in the output of the license status command.
+
+Use the register keyword to store the output of the shell command in a variable.
+
+Use the when keyword to check if the variable contains the word "Evaluation".
+
+Use the service module to stop the server service if the host is running on an Evaluation license.
+
+Example:
+
+Copy code
+---
+- name: Check and disable server on Evaluation license
+  hosts: all
+  vars:
+    service_name: "{{ service_name }}"
+  tasks:
+  - name: Check license status
+    shell: "license-status | grep Evaluation"
+    register: license_status
+
+  - name: Disable server if on Evaluation license
+    service:
+      name: "{{ service_name }}"
+      state: stopped
+    when: license_status.stdout.find("Evaluation") != -1
+You can also use ansible module like win_license and win_product_key to check the license information on windows server.
+
+
+
+
+mohan.chirakala@gmail.com
+develop a method to check the vmware host is not running on Evaluation license and disable the server if it is on Evaluation license with ansible
+Here is a possible method to check if a VMware host is running on an Evaluation license and disable the server if it is, using Ansible:
+
+Create a new Ansible playbook to run the check and disable the server.
+
+Use the vmware_license module to check the license information on the host.
+
+Use the register keyword to store the output of the vmware_license command in a variable.
+
+Use the when keyword to check if the license is an evaluation license.
+
+Use the vmware_host module to disable the host if it is running on an Evaluation license.
+
+Example:
+
+Copy code
+---
+- name: Check and disable VMware host on Evaluation license
+  hosts: localhost
+  vars:
+    vcenter_hostname: "{{ vcenter_hostname }}"
+    vcenter_username: "{{ vcenter_username }}"
+    vcenter_password: "{{ vcenter_password }}"
+    hostname: "{{ hostname }}"
+  tasks:
+  - name: Check VMware host license
+    vmware_license:
+      hostname: "{{ vcenter_hostname }}"
+      username: "{{ vcenter_username }}"
+      password: "{{ vcenter_password }}"
+      host: "{{ hostname }}"
+    register: license_status
+
+  - name: Disable host if on Evaluation license
+    vmware_host:
+      hostname: "{{ vcenter_hostname }}"
+      username: "{{ vcenter_username }}"
+      password: "{{ vcenter_password }}"
+      esxi_hostname: "{{ hostname }}"
+      state: absent
+      force: yes
+    when: license_status.license_key.startswith("EVAL")
+You will need to have pyVmomi python library installed and you can use pip install pyVmomi to install it.
+You should also replace the placeholders vcenter_hostname, vcenter_username, vcenter_password, hostname with the appropriate values in your environment.
+
+This is a basic example, you may also need to adapt it to your specific use case.
+
+
+
+
+mohan.chirakala@gmail.com
+develop a method to check the vmware host is not running on Evaluation license and disable the server if it is on Evaluation license and send email notification using  ansible playbook
+Here is a possible method to check if a VMware host is running on an Evaluation license and disable the server if it is, using Ansible and sending an email notification:
+
+Create a new Ansible playbook to run the check and disable the server.
+
+Use the vmware_license module to check the license information on the host.
+
+Use the register keyword to store the output of the vmware_license command in a variable.
+
+Use the when keyword to check if the license is an evaluation license.
+
+Use the vmware_host module to disable the host if it is running on an Evaluation license.
+
+Use the notify keyword to trigger an email notification when the host is disabled.
+
+Use the mail module to send the email notification.
+
+Example:
+
+Copy code
+---
+- name: Check and disable VMware host on Evaluation license
+  hosts: localhost
+  vars:
+    vcenter_hostname: "{{ vcenter_hostname }}"
+    vcenter_username: "{{ vcenter_username }}"
+    vcenter_password: "{{ vcenter_password }}"
+    hostname: "{{ hostname }}"
+    mail_from: "{{ mail_from }}"
+    mail_to: "{{ mail_to }}"
+    mail_server: "{{ mail_server }}"
+  tasks:
+  - name: Check VMware host license
+    vmware_license:
+      hostname: "{{ vcenter_hostname }}"
+      username: "{{ vcenter_username }}"
+      password: "{{ vcenter_password }}"
+      host: "{{ hostname }}"
+    register: license_status
+
+  - name: Disable host if on Evaluation license
+    vmware_host:
+      hostname: "{{ vcenter_hostname }}"
+      username: "{{ vcenter_username }}"
+      password: "{{ vcenter_password }}"
+      esxi_hostname: "{{ hostname }}"
+      state: absent
+      force: yes
+    when: license_status.license_key.startswith("EVAL")
+    notify: send email
+    
+  - name: send email
+    mail:
+      host: "{{ mail_server }}"
+      port: 25
+      from: "{{ mail_from }}"
+      to: "{{ mail_to }}"
+      subject: "VMware host disabled"
+      body: "The host {{ hostname }} has been disabled as it was running on an Evaluation license."
+    when: license_status.license_key.startswith("EVAL")
+You will need to have pyVmomi python library installed and you can use pip install pyVmomi to install it.
+You should also replace the placeholders vcenter_hostname, vcenter_username, vcenter_password, hostname, mail_from, mail_to, mail_server with the appropriate values in your environment.
+You should also make sure that the mail server is configured and the mail ports are open on the system.
+
+This is a basic example, you may also need to adapt it to your specific use case.
+
+
+
+
+mohan.chirakala@gmail.com
+develop a method to get  the list of vmware hosts is  running on Evaluation license
+Here is a possible method to get a list of VMware hosts that are running on an Evaluation license using Ansible:
+
+Create a new Ansible playbook to run the check.
+
+Use the vmware_license module to check the license information on the host.
+
+Use the register keyword to store the output of the vmware_license command in a variable.
+
+Use the when keyword to check if the license is an evaluation license.
+
+Use the debug module to output the hostname of the host if it is running on an Evaluation license.
+
+Example:
+
+Copy code
+---
+- name: Get list of VMware hosts on Evaluation license
+  hosts: localhost
+  vars:
+    vcenter_hostname: "{{ vcenter_hostname }}"
+    vcenter_username: "{{ vcenter_username }}"
+    vcenter_password: "{{ vcenter_password }}"
+  tasks:
+  - name: Check VMware host licenses
+    vmware_license:
+      hostname: "{{ vcenter_hostname }}"
+      username: "{{ vcenter_username }}"
+      password: "{{ vcenter_password }}"
+      host: "{{ item }}"
+    register: license_status
+    with_items: "{{ hostnames }}"
+
+  - name: Output hostname if on Evaluation license
+    debug:
+      msg: "{{ item }} is on Evaluation license"
+    when: license_status.license_key.startswith("EVAL")
+    with_items: "{{ hostnames }}"
+You will need to have pyVmomi python library installed and you can use pip install pyVmomi to install it.
+You should also replace the placeholders vcenter_hostname, vcenter_username, vcenter_password, hostnames with the appropriate values in your environment.
+hostnames should be list of hostnames you want to check for the license
+
+This is a basic example, you may also need to adapt it to your specific use case.
+You can also use the ansible module vmware_host_facts to get the details of all the hosts available in the vcenter and then you can use a loop to check the license of all the hosts and then filter the host which are running on evaluation license.
+
+
+
+
+mohan.chirakala@gmail.com
+!
+develop a method to get  the list of vmware hosts is  running on Evaluation license with python
+This content may violate our content policy. If you believe this to be in error, please submit your feedback — your input will aid our research in this area.
+Here is a possible method to get a list of VMware hosts that are running on an Evaluation license using Python and the pyVmomi library:
+
+Import the necessary libraries, such as pyVmomi and ssl.
+
+Connect to the vCenter server using the SmartConnect method, providing the vCenter server's hostname or IP, username, and password.
+
+Retrieve all the hosts managed by the vCenter server using the content.rootFolder.childEntity property.
+
+Iterate through the hosts and use the config.product.licenseProductName property to check the license type.
+
+If the license type is "VMware vSphere Hypervisor", append the hostname to a list of hosts on Evaluation license.
+
+Example:
+
+Copy code
+from pyVim.connect import SmartConnect
+from pyVmomi import vim
+import ssl
+
+# vCenter server details
+vc_host = 'vcenter.example.com'
+vc_user = 'username'
+vc_pass = 'password'
+
+# disable SSL certificate verification
+context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+context.verify_mode = ssl.CERT_NONE
+
+# connect to vCenter
+si = SmartConnect(host=vc_host, user=vc_user, pwd=vc_pass, sslContext=context)
+
+# get all hosts
+hosts = si.content.rootFolder.childEntity[0].hostFolder.childEntity
+
+# list to store hosts on evaluation license
+eval_hosts = []
+
+# iterate through hosts
+for host in hosts:
+    # check if license is evaluation
+    if host.config.product.licenseProductName == "VMware vSphere Hypervisor":
+        eval_hosts.append(host.name)
+
+# output list of hosts on evaluation license
+print(eval_hosts)
+You should also replace the placeholders vcenter_hostname, vcenter_username, vcenter_password with the appropriate values in your environment.
+You need to have pyVmomi python library installed and you can use pip install pyVmomi to install it.
+
+This is a basic example, you may also need to adapt it to your specific use case.
+You can also use the config.product.licenseProductName property to check for other licenses as well.
+
+
+
+
+mohan.chirakala@gmail.com
+develop a method to get  the list of vmware hosts is  running on Evaluation license using yml and python libraries 
+Here is a possible method to get a list of VMware hosts that are running on an Evaluation license using a YAML configuration file and Python with the pyVmomi library:
+
+Create a YAML configuration file containing the vCenter server's hostname or IP, username, and password.
+
+In your Python script, import the necessary libraries, such as pyVmomi and ssl.
+
+Use the yaml library to read the configuration file and extract the vCenter server details.
+
+Connect to the vCenter server using the SmartConnect method, providing the vCenter server's hostname or IP, username, and password.
+
+Retrieve all the hosts managed by the vCenter server using the content.rootFolder.childEntity property.
+
+Iterate through the hosts and use the config.product.licenseProductName property to check the license type.
+
+If the license type is "VMware vSphere Hypervisor", append the hostname to a list of hosts on Evaluation license.
+
+Example:
+
+Copy code
+import yaml
+from pyVim.connect import SmartConnect
+from pyVmomi import vim
+import ssl
+
+# read vCenter server details from YAML config file
+with open("config.yml", "r") as f:
+    config = yaml.safe_load(f)
+
+vc_host = config['vcenter_host']
+vc_user = config['vcenter_user']
+vc_pass = config['vcenter_pass']
+
+# disable SSL certificate verification
+context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+context.verify_mode = ssl.CERT_NONE
+
+# connect to vCenter
+si = SmartConnect(host=vc_host, user=vc_user, pwd=vc_pass, sslContext=context)
+
+# get all hosts
+hosts = si.content.rootFolder.childEntity[0].hostFolder.childEntity
+
+# list to store hosts on evaluation license
+eval_hosts = []
+
+# iterate through hosts
+for host in hosts:
+    # check if license is evaluation
+    if host.config.product.licenseProductName == "VMware vSphere Hypervisor":
+        eval_hosts.append(host.name)
+
+# output list of hosts on evaluation license
+print(eval_hosts)
+You should also replace the placeholders vcenter_hostname, vcenter_username, vcenter_password with the appropriate values in your environment.
+You need to have pyVmomi python library installed and you can use pip install pyVmomi to install it.
+You also need to have pyyaml python library installed and you can use pip install pyyaml to install it.
+
+This is a basic example, you may also need to adapt it to your specific use case.
+You can also use the config.product.licenseProductName property to check for other licenses as well.
+You can also use the same method to read the details from environment variables or any other source of configuration.
+
+
+
+
+mohan.chirakala@gmail.com
+develop a method to get  the list of vmware hosts is  running on Evaluation license using vrops api 
+Here is a possible method to get a list of VMware hosts that are running on an Evaluation license using the vROps API:
+
+Make sure you have access to a vROps instance and an API token with the required permissions to retrieve license information.
+
+Use the requests library to make a GET request to the vROps API endpoint for retrieving license information. The endpoint will be in the format https://vrops.example.com/suite-api/api/licenses
+
+In the headers of the request, include the Authorization header with the value vRealizeOpsToken <API_TOKEN>, where <API_TOKEN> is your vROps API token.
+
+Parse the JSON response to extract the license information.
+
+Iterate through the hosts and check the licenseType property to check the license type.
+
+If the license type is "evaluation", append the hostname to a list of hosts on Evaluation license.
+
+Example:
+
+Copy code
+import requests
+
+# vROps server details
+vrops_host = 'vrops.example.com'
+api_token = 'API_TOKEN'
+
+# make GET request to vROps API endpoint for license information
+response = requests.get(f'https://{vrops_host}/suite-api/api/licenses', headers={'Authorization': f'vRealizeOpsToken {api_token}'})
+
+# parse JSON response
+licenses = response.json()
+
+# list to store hosts on evaluation license
+eval_hosts = []
+
+# iterate through hosts
+for license in licenses["licenses"]:
+    if license['licenseType'] == "evaluation":
+        eval_hosts.append(license['hostName'])
+
+# output list of hosts on evaluation license
+print(eval_hosts)
+You should also replace the placeholders vrops_host,
+
+
+
+
+mohan.chirakala@gmail.com
+develop a method to get  the list of vmware hosts is  running on Evaluation license using vrops api with ansible playbook
+Here is a possible method to get a list of VMware hosts that are running on an Evaluation license using the vROps API with an Ansible playbook:
+
+Create a new Ansible playbook to run the check.
+
+Use the uri module to make a GET request to the vROps API endpoint for retrieving license information. The endpoint will be in the format https://vrops.example.com/suite-api/api/licenses
+
+Use the headers option to include the Authorization header with the value vRealizeOpsToken <API_TOKEN>, where <API_TOKEN> is your vROps API token.
+
+Use the register keyword to store the output of the request in a variable.
+
+Use the json_query filter to extract the license information from the response.
+
+Use the when keyword to check if the license type is "evaluation"
+
+Use the debug module to output the hostname of the host if it is running on an Evaluation license.
+
+Example:
+
+Copy code
+---
+- name: Get list of VMware hosts on Evaluation license
+  hosts: localhost
+  vars:
+    vrops_host: "vrops.example.com"
+    api
+
+
+
+mohan.chirakala@gmail.com
+end to end method to get the list of vmware hosts is  running on Evaluation license using vrops api with ansible playbook
+Here is a possible end-to-end method to get a list of VMware hosts that are running on an Evaluation license using the vROps API with an Ansible playbook:
+
+Create a new Ansible playbook to run the check.
+
+Create a variable file (e.g. vars.yml) containing the vROps server's hostname or IP, and the API token.
+
+Use the uri module to make a GET request to the vROps API endpoint for retrieving license information. The endpoint will be in the format https://{{ vrops_host }}/suite-api/api/licenses.
+
+Use the headers option to include the Authorization header with the value vRealizeOpsToken {{ api_token }}, where api_token is your vROps API token.
+
+Use the register keyword to store the output of the request in a variable.
+
+Use the json_query filter to extract the license information from the response.
+
+Use the when keyword to check if the license type is "evaluation"
+
+Use the debug module to output the hostname of the host if it is running on an Evaluation license.
+
+Example Playbook:
+
+Copy code
+---
+- name: Get list of VMware hosts on Evaluation license
+  hosts: localhost
+  vars_files:
+    - vars.yml
+  tasks:
+  - name: Get license information from vROps
+    uri:
+      url: "https://{{ vrops_host }}/suite-api/api/licenses"
+      method: GET
+      headers:
+        Authorization: "vRealizeOpsToken {{ api_token }}"
+    register: license_info
+    
+  - name: Extract license information
+    set_fact:
+      licenses: "{{ license_info.json.licenses }}"
+      
+  - name: Get hosts with evaluation license
+    set_fact:
+      eval_hosts: "{{
+
+
+develop a method to get  the list of vmware hosts is  running on Evaluation license using vrops api with ansible playbook
+
+1 / 2
+
+Here is a possible method to get a list of VMware hosts that are running on an Evaluation license using the vROps API and Ansible:
+
+Create a new Ansible playbook to run the check.
+
+Use the uri module to make a GET request to the vROps API endpoint for retrieving license information. The endpoint will be in the format https://vrops.example.com/suite-api/api/licenses
+
+Use the register keyword to store the output of the uri command in a variable.
+
+Use the json filter to parse the JSON response and extract the license information.
+
+Use a loop to iterate through the hosts and use the when keyword to check if the licenseType is "evaluation".
+
+Use the debug module to output the hostname of the host if it is running on an Evaluation license.
+
+Example:
+
+Copy code
+---
+- name: Get list of VMware hosts on Evaluation license
+  hosts: localhost
+  vars:
+    vrops_host: "vrops.example.com"
+    api_token: "API_TOKEN"
+  tasks:
+  - name: Get license information from vROps
+    uri:
+      url: "https://{{ vro
+
+
+
+
+mohan.chirakala@gmail.com
+develop a method to get  the list of vmware hosts is  running on Evaluation license using vrops api 
+
+Here is a possible method to get a list of VMware hosts that are running on an Evaluation license using the vRealize Operations Manager (vROPS) API:
+
+Obtain the vROPS API endpoint, username, and password.
+
+Use the requests library in python to make an API call to the vROPS endpoint to authenticate and obtain an authentication token.
+
+Use the token to make a GET request to the vROPS API endpoint to retrieve the list of hosts.
+
+Iterate through the list of hosts and check the LicenseType property for each host.
+
+If the license type is "Evaluation", append the hostname to a list of hosts on Evaluation license.
+
+Example:
+
+Copy code
+import requests
+import json
+
+# vRealize Operations Manager API endpoint
+vrops_endpoint = "https://vrops.example.com"
+
+# vRealize Operations Manager API credentials
+username = "api_user"
+password = "api_pass"
+
+# authenticate and get token
+response = requests.post(f"{vrops_endpoint}/suite-api/api/auth/token/acquire", auth=(username, password))
+token = response.json()['token']
+
+# get list of hosts
+headers = {'Authorization': f"vRealizeOpsToken {token}"}
+response = requests.get(f"{vrops_endpoint}/suite-api/api/resources/adapterkinds/VMWARE/resources", headers=headers)
+
+# list to store hosts on evaluation license
+eval_hosts = []
+
+# iterate through hosts
+for host in response.json()['resourceList']:
+    # check if license is evaluation
+    if host['resourceKey']['LicenseType'] == "Evaluation":
+        eval_hosts.append(host['name'])
+
+# output list of hosts on evaluation license
+print(eval_host
+
+
+
+
+
+mohan.chirakala@gmail.com
+develop a method to get  the list of vmware hosts is  running on Evaluation license using vrops api 
+
+3 / 3
+
+Here is a possible method to get a list of VMware hosts that are running on an Evaluation license using the vROps API:
+
+Authenticate to the vROps API using the requests library in Python. The vROps API uses basic authentication, so you will need to pass in the vROps username and password in the headers of the request.
+
+Use the requests.get() method to query the vROps API for the list of hosts. The URL to query will be in the format https://vrops_hostname/suite-api/api/resources?resourceKind=host
+
+Parse the JSON response to get the list of hosts.
+
+Iterate through the hosts and check the license property to see if the host is running on an Evaluation license.
+
+Append the hostname to a list of hosts on Evaluation license if the license is Evaluation.
+
+Example:
+
+Copy code
+import requests
+import json
+
+# vROps server details
+vrops_host = 'vrops.example.com'
+vrops_user = 'username'
+vrops_pass = 'password'
+
+# authenticate to vROps API
+auth = requests.auth.HTTPBasicAuth(vrops_user, vrops_pass)
+
+# get list of hosts
+url = 'https://' + vrops_host + '/suite-api/api/resources?resourceKind=host'
+response = requests.get(url, auth=auth, verify=False)
+
+# parse JSON response
+hosts = json.loads(response.text)['resourceList']
+
+# list to store hosts on evaluation license
+eval_hosts = []
+
+# iterate through hosts
+for host in hosts:
+    # check if license is evaluation
+    if host['license'] == "Evaluation":
+        eval_hosts.append(host['name'])
+
+# output list of hosts on evaluation license
+
+
+
+
+mohan.chirakala@gmail.com
+develop a method to get  the list of vmware hosts is  running on Evaluation license using vrops api with ansible playbook
+
+1 / 2
+
+Here is a possible method to get a list of VMware hosts that are running on an Evaluation license using the vROps API and Ansible:
+
+Create a new Ansible playbook to run the check.
+
+Use the uri module to make a GET request to the vROps API endpoint for retrieving license information. The endpoint will be in the format https://vrops.example.com/suite-api/api/licenses
+
+Use the register keyword to store the output of the uri command in a variable.
+
+Use the json filter to parse the JSON response and extract the license information.
+
+Use a loop to iterate through the hosts and use the when keyword to check if the licenseType is "evaluation".
+
+Use the debug module to output the hostname of the host if it is running on an Evaluation license.
+
+Example:
+
+Copy code
+---
+- name: Get list of VMware hosts on Evaluation license
+  hosts: localhost
+  vars:
+    vrops_host: "vrops.example.com"
+    api_token: "API_TOKEN"
+  tasks:
+  - name: Get license information from vROps
+    uri:
+      url: "https://{{ vro
+
+
+
+
+
+end to end method to get the list of vmware hosts is  running on Evaluation license using vrops api with ansible playbook
+In the playbook, you need to create a variable file vars.yml containing the vROps server's hostname or IP, and the API token.
+
+Copy code
+vrops_host: "vrops.example.com"
+api_token: "API_TOKEN"
+
+You can use the uri ansible module to make a GET request to the vROps API endpoint for retrieving license information.
+The headers option is used to include the Authorization header with the value vRealizeOpsToken {{ api_token }}, where api_token is your vROps API token.
+The register keyword is used to store the output of the request in a variable.
+The json_query filter is used to extract the license information from the response.
+The when keyword is used to check if the license type is "evaluation"
+The debug module is used to output the hostname of the host if it is running on an Evaluation license.
+
+You need to run the playbook by providing the variable file
+
+Copy code
+ansible-playbook -i "localhost," -c local playbook.yml --extra-vars "@vars.yml"
+This is a basic example, you may also need to adapt it to your specific use case and also need to check the vROps API documentation for the exact endpoint and structure of the response you are getting.
+
+
+
+
+
+
+
+
+
+develop a method to get  the list of vmware hosts is  running on Evaluation license using vrops api with ansible playbook
+Here is a possible method to get a list of VMware hosts that are running on an Evaluation license using the vROps API and Ansible:
+
+Create a new Ansible playbook to run the check.
+
+Use the uri module to make a GET request to the vROps API endpoint for retrieving license information. The endpoint will be in the format https://vrops.example.com/suite-api/api/licenses
+
+Use the register keyword to store the output of the uri command in a variable.
+
+Use the json filter to parse the JSON response and extract the license information.
+
+Use a loop to iterate through the hosts and use the when keyword to check if the licenseType is "evaluation".
+
+Use the debug module to output the hostname of the host if it is running on an Evaluation license.
+
+Example:
+
+Copy code
+---
+- name: Get list of VMware hosts on Evaluation license
+  hosts: localhost
+  vars:
+    vrops_host: "vrops.example.com"
+    api_token: "API_TOKEN"
+  tasks:
+  - name: Get license information from vROps
+    uri:
+      url: "https://{{ vrops_host }}/suite-api/api/licenses"
+      headers:
+        Authorization: "vRealizeOpsToken {{ api_token }}"
+      method: GET
+    register: licenses
+    
+  - name: Output hostname if on Evaluation license
+    debug:
+      msg: "{{ item.hostName }} is on Evaluation license"
+    when: item.licenseType == "evaluation"
+    with_items: "{{ licenses.json.licenses }}"
+You should also replace the placeholders vrops_host, api_token with the appropriate values in your environment.
+
+This is a basic example, you may also need to adapt it to your specific use case.
+You should also make sure that the
+
+
+
+
+
+develop a method to get  the list of vmware hosts is  running on Evaluation license using vrops api with ansible playbook
+
+2 / 2
+
+Here is a possible method to get a list of VMware hosts that are running on an Evaluation license using the vROps API and Ansible:
+
+Create a new Ansible playbook to run the check.
+
+Use the uri module to make a GET request to the vROps API endpoint for retrieving license information. The endpoint will be in the format https://vrops.example.com/suite-api/api/licenses
+
+Use the register keyword to store the output of the uri command in a variable.
+
+Use the json filter to parse the JSON response and extract the license information.
+
+Use a loop to iterate through the licenses from the json response, and use the when keyword to check if the licenseType is "evaluation".
+
+Use the debug module to output the hostname of the host if it is running on an Evaluation license.
+
+Example:
+
+Copy code
+---
+- name: Get list of VMware hosts on Evaluation license
+  hosts: localhost
+  vars:
+    vrops_host: "vrops.example.com"
+    api_token: "API_TOKEN"
+  tasks:
+  - name: Get license information from vROps
+    uri:
+      url: "https://{{ vrops_host }}/suite-api/api/licenses"
+      headers:
+        Authorization: "vRealizeOpsToken {{ api_token }}"
+    register: license_info
+    
+  - name: Output hostname if on Evaluation license
+    debug:
+      msg: "{{ item.hostName }} is on Evaluation license"
+    when: item.licenseType == "evaluation"
+    with_items: "{{ license_info.json.licenses }}"
+You should also replace the placeholders vrops_host, api_token with the appropriate values in your environment.
+You should also make sure that the VROPS API endpoint is accessible from the machine where the playbook is running
+
+
+
+mohan.chirakala@gmail.com
+develop a method to get  the list of vmware hosts is  running on Evaluation license using vrops api with ansible playbook
+
+3 / 3
+
+Here is a possible method to get a list of VMware hosts that are running on an Evaluation license using the vROps API and Ansible:
+
+Create a new Ansible playbook to run the check.
+
+Use the uri module to make a GET request to the vROps API endpoint for retrieving license information. The endpoint will be in the format https://vrops.example.com/suite-api/api/licenses
+
+Use the register keyword to store the output of the uri command in a variable.
+
+Use the json filter to parse the JSON response and extract the license information.
+
+Use a loop to iterate through the hosts and use the when keyword to check if the licenseType is "evaluation".
+
+Use the debug module to output the hostname of the host if it is running on an Evaluation license.
+
+Example:
+
+Copy code
+---
+- name: Get list of VMware hosts on Evaluation license
+  hosts: localhost
+  vars:
+    vrops_host: "vrops.example.com"
+    api_token: "API_TOKEN"
+  tasks:
+  - name: Get license information from vROps
+    uri:
+      url: "https://{{ vrops_host }}/suite-api/api/licenses"
+      headers:
+        Authorization: "vRealizeOpsToken {{ api_token }}"
+      method: GET
+    register: license_info
+
+  - name: Output hostname if on Evaluation license
+    debug:
+      msg: "{{ item.hostName }} is on Evaluation license"
+    loop: "{{ license_info.json.licenses }}"
+    when: item.licenseType == "evaluation"
+You should also replace the placeholders vrops_host, api_token with the appropriate values in your environment.
+
+This is a basic example, you may also need to adapt it to your specific use case.
+You need to have `requests
+
+
+
+
+
+
+
+develop a method to get  the list of vmware hosts is  running on Evaluation license using vrops api with ansible playbook
+
+4 / 4
+
+Here is a possible method to get a list of VMware hosts that are running on an Evaluation license using the vROps API and Ansible:
+
+Create a new Ansible playbook to run the check.
+
+Use the uri module to make a GET request to the vROps API endpoint for retrieving license information. The endpoint will be in the format https://vrops.example.com/suite-api/api/licenses
+
+Use the register keyword to store the output of the uri command in a variable.
+
+Use the json filter to parse the JSON response and extract the license information.
+
+Use a loop to iterate through the licenses and use the when keyword to check if the licenseType is "evaluation".
+
+Use the debug module to output the hostname of the host if it is running on an Evaluation license.
+
+Example:
+
+Copy code
+---
+- name: Get list of VMware hosts on Evaluation license
+  hosts: localhost
+  vars:
+    vrops_host: "vrops.example.com"
+    api_token: "API_TOKEN"
+  tasks:
+  - name: Get license information from vROps
+    uri:
+      url: "https://{{ vrops_host }}/suite-api/api/licenses"
+      headers:
+        Authorization: "vRealizeOpsToken {{ api_token }}"
+      method: GET
+    register: licenses
+
+  - name: Output hostname if on Evaluation license
+    debug:
+      msg: "{{ item.hostName }} is on Evaluation license"
+    when: item.licenseType == "evaluation"
+    with_items: "{{ licenses.json.licenses }}"
+You should replace the placeholders vrops_host and api_token with the appropriate values in your environment.
+You should also make sure that the vROps server is accessible from the machine running the ansible playbook and the user has the necessary permissions.
+
+
+
+develop a method to get  the list of vmware hosts is  running on Evaluation license using vrops api with ansible playbook
+
+5 / 5
+
+Here is a possible method to get a list of VMware hosts that are running on an Evaluation license using the vROps API and Ansible:
+
+Create a new Ansible playbook to run the check.
+
+Use the uri module to make a GET request to the vROps API endpoint for retrieving license information. The endpoint will be in the format https://vrops.example.com/suite-api/api/licenses
+
+Use the headers option to include the Authorization header with the value vRealizeOpsToken <API_TOKEN>, where <API_TOKEN> is your vROps API token.
+
+Use the register keyword to store the output of the uri command in a variable.
+
+Use the json filter to parse the JSON response and extract the license information.
+
+Use a loop to iterate through the hosts and use the when keyword to check if the licenseType is "evaluation".
+
+Use the debug module to output the hostname of the host if it is running on an Evaluation license.
+
+Example:
+
+Copy code
+---
+- name: Get list of VMware hosts on Evaluation license
+  hosts: localhost
+  vars:
+    vrops_host: "vrops.example.com"
+    api_token: "API_TOKEN"
+  tasks:
+  - name: Get license information from vROps
+    uri:
+      url: "https://{{ vrops_host }}/suite-api/api/licenses"
+      headers:
+        Authorization: "vRealizeOpsToken {{ api_token }}"
+      method: GET
+    register: vrops_response
+    
+  - name: Extract license information
+    set_fact:
+      licenses: "{{ vrops_response.json.licenses }}"
+
+  - name: Output hostname if on Evaluation license
+    debug:
+      msg: "{{ item.hostName }} is on Evaluation license"
+   
+
+
+
+- end to end check the vmware host is not running on Evaluation license with ansible and using vrops api
+An end-to-end method to check if a VMware host is not running on an evaluation license using Ansible and the vRealize Operations (vROps) API would involve the following steps:
+
+Create a new Ansible playbook and install the python module vrops-client which is a python wrapper for the vROps REST API.
+Copy code
+- name: Install vROps python module
+  pip:
+    name: vrops-client
+Create a task to import the vROps python module and to connect to the vROps server using the vROps API endpoint, username and password
+Copy code
+- name: Connect to vROps
+  set_fact:
+    vrops_connection: "{{ lookup('vrops_client', endpoint='https://vrops.example.com', username='username', password='password') }}"
+Create a task that uses the vROps python module to gather information about all hosts in the vCenter server and their license keys.
+Copy code
+- name: Get all Hosts
+  set_fact:
+    all_hosts: "{{ vrops_connection.get_entities('HostSystem') }}"
+Create a task that iterates through the hosts and check the license type of each one.
+Copy code
+- name: Check host license type
+  debug:
+    msg: "License type for host {{ item.name }} is {{ item.license_key }}"
+  loop: "{{ all_hosts.resources }}"
+Check if the license type of the host is an evaluation license. This can be done by comparing the license_key variable to a predefined string that represents an evaluation license.
+Copy code
+- name: Check if host is running on evaluation license
+    debug:
+      msg: "Host {{ item.name }} is running on an evaluation license"
+    loop: "{{ all_hosts.resources }}"
+    when: item.license_key == "EVAL"
+Run the playbook against the vROps server
+Copy code
+ansible-playbook check_host_license.yml
+The output of the playbook will indicate if any of the hosts are running on an evaluation license.
+
+Based on the output, you can take appropriate actions such as upgrading the license or disabling the host.
+
+Note: The license key returned by the vROps API might be different for different versions of vSphere. It is recommended to check the documentation of your vSphere version for the correct license key.
+Also you need to have a valid vROps license in order to use the vROps REST API.
+
+Also, as a best practice, it is recommended to use Ansible vault or another secure method to store the vROps API credentials in order to protect them from unauthorized access.  
+
+
+- end to end to check and disable the vmware host which is running on Evaluation license  with ansible and using vrops api
+An end-to-end method to check and disable VMware hosts that are running on an evaluation license using Ansible and the vRealize Operations (vROps) API would involve the following steps:
+
+Create a new Ansible playbook and install the python module vrops-client which is a python wrapper for the vROps REST API.
+Copy code
+- name: Install vROps python module
+  pip:
+    name: vrops-client
+Create a task to import the vROps python module and to connect to the vROps server using the vROps API endpoint, username and password
+Copy code
+- name: Connect to vROps
+  set_fact:
+    vrops_connection: "{{ lookup('vrops_client', endpoint='https://vrops.example.com', username='username', password='password') }}"
+Create a task that uses the vROps python module to gather information about all hosts in the vCenter server and their license keys.
+Copy code
+- name: Get all Hosts
+  set_fact:
+    all_hosts: "{{ vrops_connection.get_entities('HostSystem') }}"
+Create a task that iterates through the hosts and check the license type of each one.
+Copy code
+- name: Check host license type
+  debug:
+    msg: "License type for host {{ item.name }} is {{ item.license_key }}"
+  loop: "{{ all_hosts.resources }}"
+Check if the license type of the host is an evaluation license. This can be done by comparing the license_key variable to a predefined string that represents an evaluation license.
+Copy code
+- name: Check if host is running on evaluation license
+    debug:
+      msg: "Host {{ item.name }} is running on an evaluation license"
+    loop: "{{ all_hosts.resources }}"
+    when: item.license_key == "EVAL"
+Create a task that disable the host which is running on evaluation license by calling the vROps python module method to disable the host
+Copy code
+- name: Disable host
+    vrops_client.disable_host:
+      host: "{{ item.name }}"
+    loop: "{{ all_hosts.resources }}"
+    when: item.license_key == "EVAL"
+Run the playbook against the vROps server
+Copy code
+ansible-playbook check_host_license.yml
+The output of the playbook will indicate if any of the hosts are running on an evaluation license and they are disabled.
+
+Based on
+
+
+
+
+
+
+end to end to check and disable the vmware host which is running on Evaluation license  with yml 
+Here is an end-to-end method to check and disable VMware hosts that are running on an Evaluation license using YAML configuration files and Ansible:
+
+Create a YAML configuration file containing the vCenter server's hostname or IP, username, and password.
+
+Create another YAML configuration file containing the vROps server's hostname or IP and the API token.
+
+Create an Ansible playbook that uses the import_yaml module to read the configuration files and extract the necessary information.
+
+Use the vmware_host module to check the license information on the host.
+
+Use a loop to iterate through the hosts and use the when keyword to check if the license is an evaluation license.
+
+Use the uri module to make a GET request to the vROps API endpoint for disabling the host.
+
+Use the mail module to send an email notification after disabling the host
+
+Example:
+
+Copy code
+- name: Check and disable VMware hosts on Evaluation license
+  hosts: localhost
+  vars_files:
+    - vcenter.yml
+    - vrops.yml
+  tasks:
+  - name: Check VMware host licenses
+    vmware_host:
+      hostname: "{{ vcenter_host }}"
+      username: "{{ vcenter_user }}"
+      password: "{{ vcenter_pass }}"
+      hostname: "{{ item }}"
+    register: license_status
+    with_items: "{{ hostnames }}"
+
+  - name: Disable host if on Evaluation license
+    uri:
+      url: "https://{{ vrops_host }}/suite-api/api/licenses/{{ item.hostName }}"
+      headers:
+        Authorization: "vRealizeOpsToken {{ api_token }}"
+      method: DELETE
+    when: license_status.license_key.startswith("EVAL")
+    with_items: "{{ hostnames }}"
+
+  - name: Send email notification
+    mail:
+      host: smtp.example.com
+      port: 587
+      username: email@example.com
+      password: email_password
+      to: recipient@example.com
+      subject: "Evaluation license hosts disabled"
+      body: "The following hosts have been disabled due to running on an Evaluation license: {{ eval_hosts }}"
+You will need to have pyVmomi python library installed and you can use pip install pyVmomi to install it.
+You should also replace the placeholders vcenter_hostname, vcenter_username, vcenter_password, hostnames, vrops_host, api_token, smtp_host, smtp_port, email_username, email_password, recipient with the appropriate values in your environment.
+hostnames should be list of hostnames you want to check for the license
+You need to have smtp server configured to send the email.
+
+This is a
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+end to end to check and disable the vmware host which is running on Evaluation license  with yml 
+To check and disable a VMware host running on an evaluation license using a YAML file, you can use the vSphere Automation SDK for Python to write a script that connects to the vCenter server, identifies the host, and disables it. The script can then be run using a YAML file to specify the connection details and other necessary information.
+
+To disable the host, you will need to use the method configManager.licenseManager.UpdateLicense with the spec property set to evaluation and the operation property set to remove.
+
+It is important to note that disabling a host in this way will prevent it from being able to function, so it should only be done as a last resort. Additionally, you should ensure that you have a valid license for the host before disabling it.
+
+
+
+
+mohan.chirakala@gmail.com
+ check and disable the vmware host which is running on Evaluation license  with yml 
+To check and disable a VMware host running on an evaluation license using a YAML file, you can use the vSphere Automation SDK for Python to write a script that connects to the vCenter server, identifies the host, and disables it. The script can then be run using a YAML file to specify the connection details and other necessary information.
+
+Here is an example of a script that connects to a vCenter server, checks if the host is running on an evaluation license and if so, disables the host:
+
+Copy code
+from pyVim.connect import SmartConnect, Disconnect
+from pyVmomi import vim
+import yaml
+
+# Load the YAML file with the connection details
+with open("config.yml", "r") as file:
+    config = yaml.safe_load(file)
+
+# Connect to the vCenter server
+si = SmartConnect(host=config["vcenter"]["host"],
+                  user=config["vcenter"]["user"],
+                  pwd=config["vcenter"]["password"],
+                  port=config["vcenter"]["port"])
+
+# Get the license manager
+license_manager = si.content.licenseManager
+
+# Get the host system
+host = si.content.searchIndex.FindByIp(None, config["host"]["ip"], False)
+
+# Check if the host is running on an evaluation license
+if license_manager.QueryAssignedLicense(host) == "evaluation":
+    # Disable the host
+    spec = vim.LicenseManager.EvaluationLicenseSpec()
+    spec.operation = "remove"
+    license_manager.UpdateLicense(spec)
+    print("Host has been disabled.")
+else:
+    print("Host is not running on an evaluation license.")
+
+# Disconnect from the vCenter server
+Disconnect(si)
+You have to have your vcenter and host detail in a yml file as show in the above code snippet and then run this script by providing the path of your yml file.
+
+It is important to note that disabling a host in this way will prevent it from being able to function, so it should only be done as a last resort. Additionally, you should ensure that you have a valid license for the host before disabling it.
+
+
+
+
+mohan.chirakala@gmail.com
+check the vmware host which is running on Evaluation license  with ym
+To check a VMware host to see if it is running on an evaluation license using a YAML file, you can use the vSphere Automation SDK for Python to write a script that connects to the vCenter server, identifies the host, and checks its license. The script can then be run using a YAML file to
+
+
+
+
+mohan.chirakala@gmail.com
+check the vmware host which is running on Evaluation license  with ansible
+To check a VMware host to see if it is running on an evaluation license using Ansible, you can use the vSphere Ansible modules to connect to the vCenter server, identify the host, and check its license. Here's an example of how to do this:
+
+Install the vSphere Ansible modules by running ansible-galaxy collection install vmware.vmware_rest.
+
+Create a playbook with the following tasks:
+
+Copy code
+- name: Connect to vCenter
+  vmware_rest:
+    hostname: "{{ vcenter_hostname }}"
+    username: "{{ vcenter_username }}"
+    password: "{{ vcenter_password }}"
+    validate_certs: no
+  register: vcenter
+
+- name: Find host by IP
+  vmware_host:
+    hostname: "{{ vcenter_hostname }}"
+    username: "{{ vcenter_username }}"
+    password: "{{ vcenter_password }}"
+    validate_certs: no
+    esxi_hostname: "{{ host_ip }}"
+  register: host
+
+- name: Check host license
+  debug:
+    msg: "Host is running on an evaluation license."
+  when: host.host.config.licenseProductName == "VMware vSphere Hypervisor"
+Replace {{ vcenter_hostname }}, {{ vcenter_username }}, {{ vcenter_password }}, and {{ host_ip }} with the appropriate values for your environment.
+
+Run the playbook using the command ansible-playbook -i hosts.ini playbook.yml
+
+If the host is running on an evaluation license, the debug task will output "Host is running on an evaluation license."
+
+It is important to note that, the above example is just to check the host is running on evaluation license or not, disabling a host in this way will prevent it from being able to function, so it should only be done as a last resort. Additionally, you should ensure that you have a valid license for the host before disabling it.
+
+
+
+
+mohan.chirakala@gmail.com
+check and disable the vmware host which is running on Evaluation license  with ansible
+
+2 / 2
+
+To check and disable a VMware host running on an evaluation license using Ansible, you can use the vSphere Ansible modules to connect to the vCenter server, identify the host, check its license and then disable the host. Here's an example of how to do this:
+
+Install the vSphere Ansible modules by running ansible-galaxy collection install vmware.vmware_rest.
+
+Create a playbook with the following tasks:
+
+Copy code
+- name: Connect to vCenter
+  vmware_rest:
+    hostname: "{{ vcenter_hostname }}"
+    username: "{{ vcenter_username }}"
+    password: "{{ vcenter_password }}"
+    validate_certs: no
+  register: vcenter
+
+- name: Find host by IP
+  vmware_host:
+    hostname: "{{ vcenter_hostname }}"
+    username: "{{ vcenter_username }}"
+    password: "{{ vcenter_password }}"
+    validate_certs: no
+    esxi_hostname: "{{ host_ip }}"
+  register: host
+
+- name: Check host license
+  vmware_host_power:
+    hostname: "{{ vcenter_hostname }}"
+    username: "{{ vcenter_username }}"
+    password: "{{ vcenter_password }}"
+    validate_certs: no
+    esxi_hostname: "{{ host_ip }}"
+    state: off
+  when: host.host.config.licenseProductName == "VMware vSphere Hypervisor"
+Replace {{ vcenter_hostname }}, {{ vcenter_username }}, {{ vcenter_password }}, and {{ host_ip }} with the appropriate values for your environment.
+
+Run the playbook using the command ansible-playbook -i hosts.ini playbook.yml
+
+If the host is running on an evaluation license, the vmware_host_power task will turn off the host.
+
+Please be aware that disabling a host in this way will prevent it from being able to function, so it should only be done as a last resort. 
+Additionally, you should ensure that you have a valid license for the host before disabling it and also make sure to have a plan in place to handle the impact of 
+turning off the host in production environment.
+
+
+
