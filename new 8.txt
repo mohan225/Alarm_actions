@@ -1,0 +1,84 @@
+Certainly! Here's an example of an Azure Pipeline written in YAML that you can use to automate the process of managing the gemfire.cache.xml configuration files for 5 instances and 2 stacks in a Linux environment. This example assumes that you're using Azure DevOps and that you've set up a service connection to your GitHub repository.
+
+yaml
+Copy code
+trigger:
+- main  # Replace 'main' with the appropriate branch name
+
+pr:
+- none
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+jobs:
+- job: UpdateConfig
+  steps:
+  - checkout: self
+
+  - script: |
+      for instance in instance1 instance2 instance3 instance4 instance5; do
+        disk_store_name=$(DISK_STORE_NAME_$instance)
+        disk_dir_path=$(DISK_DIR_PATH_$instance)
+      
+        # Replace placeholders in the gemfire.cache.xml file
+        sed -i "s/DISK_STORE_NAME/$disk_store_name/g" $instance/gemfire.cache.xml
+        sed -i "s/DISK_DIR_PATH/$disk_dir_path/g" $instance/gemfire.cache.xml
+      done
+    displayName: 'Replace Placeholders'
+    env:
+      DISK_STORE_NAME_instance1: $(DISK_STORE_NAME_instance1)
+      DISK_DIR_PATH_instance1: $(DISK_DIR_PATH_instance1)
+      DISK_STORE_NAME_instance2: $(DISK_STORE_NAME_instance2)
+      DISK_DIR_PATH_instance2: $(DISK_DIR_PATH_instance2)
+      DISK_STORE_NAME_instance3: $(DISK_STORE_NAME_instance3)
+      DISK_DIR_PATH_instance3: $(DISK_DIR_PATH_instance3)
+      DISK_STORE_NAME_instance4: $(DISK_STORE_NAME_instance4)
+      DISK_DIR_PATH_instance4: $(DISK_DIR_PATH_instance4)
+      DISK_STORE_NAME_instance5: $(DISK_STORE_NAME_instance5)
+      DISK_DIR_PATH_instance5: $(DISK_DIR_PATH_instance5)
+
+  - task: CopyFiles@2
+    inputs:
+      SourceFolder: '**'
+      Contents: '**/gemfire.cache.xml'
+      TargetFolder: '$(Build.ArtifactStagingDirectory)/config'
+    displayName: 'Copy Modified Files'
+
+- job: DeployConfig
+  steps:
+  - task: CopyFiles@2
+    inputs:
+      SourceFolder: '$(Build.ArtifactStagingDirectory)/config'
+      Contents: '**/*.xml'
+      TargetFolder: '$(Build.ArtifactStagingDirectory)/deploy'
+    displayName: 'Copy Files for Deployment'
+
+  # Add deployment steps to deploy the modified files to the respective locations in your environment
+  # For example, using SSH, FTP, or other deployment methods
+
+Copy this YAML script to your Azure DevOps pipeline configuration file (e.g., azure-pipelines.yml). Make sure to replace placeholders like $(DISK_STORE_NAME_instance1) and $(DISK_DIR_PATH_instance1) with actual values in your pipeline variables.
+
+The pipeline consists of two jobs similar to the previous example. The UpdateConfig job replaces placeholders in the gemfire.cache.xml files, and the DeployConfig job copies the modified files for deployment.
+
+Remember to adjust the deployment steps based on your specific deployment requirements.
+
+Once your pipeline configuration is ready, commit and push it to your GitHub repository. Azure DevOps will automatically pick up the changes and start running the pipeline based on your triggers and branch filters
+
+
+
+
+- config/
+  - dev/
+    - instance1/
+      - gemfire.cache.xml
+    - instance2/
+      - gemfire.cache.xml
+    - ...
+  - prod/
+    - instance1/
+      - gemfire.cache.xml
+    - instance2/
+      - gemfire.cache.xml
+    - ...
+- azure-pipelines.yml
